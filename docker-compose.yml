@@ -1,0 +1,85 @@
+# docker compose for local testing
+version: '3.8'
+
+services:
+  celery-base:
+    build: .
+    container_name: celery-base
+    networks:
+      - celery-backend-tier
+    volumes:
+      - ./:/my-celery-worker
+    environment:
+      - BROKER_URL=amqp://admin:admin@rabbitmq:5672
+    depends_on:
+      - rabbitmq
+
+  addition_worker:
+    extends:
+        service: celery-base
+    container_name: addition_worker
+    command: 
+      - /bin/sh
+      - -c
+      - |
+        celery -A worker worker --loglevel=info -n addition_worker@%h -Q addition
+
+  multiplication_worker:
+    extends: 
+        service: celery-base
+    container_name: multiplication_worker
+    command: 
+      - /bin/sh
+      - -c
+      - |
+        celery -A worker worker --loglevel=info -n multiplication_worker@%h -Q multiplication
+
+  celery-flower:
+    build: .
+    container_name: celery-flower
+    command: celery flower --url_prefix=flower --basic_auth=admin:admin
+    networks:
+      - celery-backend-tier
+    environment:
+      - BROKER_URL=amqp://admin:admin@rabbitmq:5672
+    depends_on:
+      - rabbitmq
+    ports:
+      - "5555:5555"
+
+  rabbitmq:
+    image: rabbitmq:3.11.13-management-alpine
+    container_name: rabbitmq
+    restart: always
+    networks:
+      - celery-backend-tier
+    volumes:
+      - backstage-rabbitmq:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "unique-erlang-cookie"
+      RABBITMQ_DEFAULT_USER: "admin"
+      RABBITMQ_DEFAULT_PASS: "admin"
+      RABBITMQ_DEFAULT_VHOST: "/"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  redis:
+    image: redis:6
+    restart: unless-stopped
+    networks:
+      - celery-backend-tier
+    volumes:
+      - backstage-redis:/data
+
+volumes:
+  backstage-db:
+    driver: local
+  backstage-redis:
+    driver: local
+  backstage-rabbitmq:
+    driver: local
+
+networks:
+  celery-backend-tier:
+    driver: bridge

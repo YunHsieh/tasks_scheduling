@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "tasks-scheduling"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "tasks_scheduling"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+celery = "^5.2.7"
+flower = "^1.2.0"
+amqp = "^5.1.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
