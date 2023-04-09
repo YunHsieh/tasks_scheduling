@@ -5,6 +5,7 @@ services:
   celery-base:
     build: .
     container_name: celery-base
+    command: celery -A worker beat
     networks:
       - celery-backend-tier
     volumes:
@@ -18,21 +19,13 @@ services:
     extends:
         service: celery-base
     container_name: addition_worker
-    command: 
-      - /bin/sh
-      - -c
-      - |
-        celery -A worker worker --loglevel=info -n addition_worker@%h -Q addition
+    command: celery -A worker worker --loglevel=info -n addition_worker@%h -Q addition
 
   multiplication_worker:
     extends: 
         service: celery-base
     container_name: multiplication_worker
-    command: 
-      - /bin/sh
-      - -c
-      - |
-        celery -A worker worker --loglevel=info -n multiplication_worker@%h -Q multiplication
+    command: celery -A worker worker --loglevel=info -n multiplication_worker@%h -Q multiplication
 
   celery-flower:
     build: .
