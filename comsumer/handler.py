@@ -1,6 +1,7 @@
 import sys
 sys.path.append(".")
 from comsumer.tasks import add, multiply
+from celery import group
 
 count = 3
 add_list = []
@@ -16,8 +17,11 @@ def get_result(data):
     print('----')
 
 for i in range(count):
-    add_list.append(add.delay(4, 4))
-    multiply_list.append(multiply.delay(4, 4))
+    add_list.append(add.s(i, i*i+1))
+    multiply_list.append(multiply.s(i, i*i+1))
+
+add_list = group(add_list)()
+multiply_list = group(multiply_list)()
 
 for i in range(count):
     get_result(add_list[i])
